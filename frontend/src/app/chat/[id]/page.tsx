@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, type ConversationDetail, type Correction, type Message } from "@/lib/api";
+import { api, type ConversationDetail, type Correction, type Message, type SummarizeResponse } from "@/lib/api";
 import { streamChat } from "@/lib/sse";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BookOpen } from "lucide-react";
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,20 @@ export default function ChatPage() {
     mutationFn: async (messageId: number) =>
       (await api.post(`/api/v1/vocab/from-chat/${messageId}`)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["vocab"] }),
+  });
+
+  const [summaryMsg, setSummaryMsg] = useState<string | null>(null);
+  const saveSession = useMutation({
+    mutationFn: async () =>
+      (await api.post<SummarizeResponse>(`/api/v1/notes/summarize/${convId}`)).data,
+    onSuccess: (data) => {
+      setSummaryMsg(data.confirmation);
+      qc.invalidateQueries({ queryKey: ["notes-all"] });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "unknown error";
+      setSummaryMsg(`Ошибка: ${msg}`);
+    },
   });
 
   useEffect(() => {
@@ -56,11 +71,30 @@ export default function ChatPage() {
     }
   }
 
+  const messageCount = conv.data?.messages?.length ?? 0;
+
   return (
     <div className="flex flex-col h-[calc(100vh-3rem)] max-w-3xl">
-      <h1 className="text-xl font-bold mb-3 truncate">
-        {conv.data?.title || "New conversation"}
-      </h1>
+      <div className="flex items-center justify-between mb-3">
+        <h1 className="text-xl font-bold truncate">
+          {conv.data?.title || "New conversation"}
+        </h1>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={saveSession.isPending || messageCount < 2}
+          onClick={() => saveSession.mutate()}
+          title={messageCount < 2 ? "Need at least one exchange first" : "Save this conversation as vault notes"}
+        >
+          <BookOpen className="h-4 w-4 mr-2" />
+          {saveSession.isPending ? "Сохраняю…" : "Сохранить сессию"}
+        </Button>
+      </div>
+      {summaryMsg && (
+        <div className="mb-3 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          {summaryMsg}
+        </div>
+      )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-2">
         {(conv.data?.messages ?? []).map((m: Message) => (

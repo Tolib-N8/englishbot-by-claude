@@ -14,6 +14,7 @@ from app.schemas.chat import ChatStreamRequest
 from app.services.anthropic_client import claude_stream
 from app.services.corrections import split_corrections
 from app.services.prompts import build_chat_user_message, tutor_system_prompt
+from app.services.vault import memory_snapshot
 
 router = APIRouter()
 
@@ -58,7 +59,8 @@ async def _stream(req: ChatStreamRequest) -> AsyncIterator[dict]:
         ]
 
         system_prompt = tutor_system_prompt(user.level)
-        prompt = build_chat_user_message(history, req.content)
+        vault_mem = memory_snapshot()
+        prompt = build_chat_user_message(history, req.content, vault_memory=vault_mem)
 
         full_text_parts: list[str] = []
 

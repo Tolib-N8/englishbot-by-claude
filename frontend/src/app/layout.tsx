@@ -2,7 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Providers } from "./providers";
-import { BookOpen, MessageSquare, Layers, Languages } from "lucide-react";
+import { BookOpen, MessageSquare, Layers, Languages, Network } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "English Tutor",
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 const nav = [
   { href: "/", label: "Home", icon: BookOpen },
   { href: "/chat", label: "Chat", icon: MessageSquare },
+  { href: "/notes", label: "Vault", icon: Network },
   { href: "/flashcards", label: "Cards", icon: Layers },
   { href: "/vocab", label: "Vocab", icon: Languages },
 ];

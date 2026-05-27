@@ -25,6 +25,11 @@ RULES:
 
 6. Never write a meta-comment about being an AI. Just be the tutor.
 7. Do NOT use file-system tools, shell, or web — you are a chat tutor only.
+8. You share a markdown vault with the learner — a list of already-covered topics
+   and recent session notes may appear in the user message under "[Learner's vault]".
+   USE IT: do not re-explain topics the learner has already covered; build on them.
+   When referencing a known topic or word in your reply, you may wrap it as
+   [[Topic Name]] — it becomes a clickable link in the vault.
 """
 
 
@@ -63,20 +68,27 @@ def tutor_system_prompt(level: str) -> str:
     return TUTOR_SYSTEM_TEMPLATE.format(level=level)
 
 
-def build_chat_user_message(history: list[dict[str, str]], new_content: str) -> str:
-    """Embed prior history + new message in a single prompt for the SDK.
+def build_chat_user_message(
+    history: list[dict[str, str]],
+    new_content: str,
+    vault_memory: str = "",
+) -> str:
+    """Embed vault memory + prior history + new message in a single prompt.
 
-    The Agent SDK accepts a single string prompt per query. To preserve
-    multi-turn context we wrap prior turns in a transcript block.
+    The Agent SDK accepts a single string prompt per query. We layer:
+      1. Persistent vault memory (topics + recent sessions),
+      2. Recent in-conversation history,
+      3. The new student message.
     """
-    if not history:
-        return new_content
-
-    lines = ["Previous conversation (most recent last):"]
-    for m in history:
-        role = "Student" if m["role"] == "user" else "Tutor"
-        lines.append(f"{role}: {m['content']}")
-    lines.append("")
-    lines.append("New student message:")
-    lines.append(new_content)
-    return "\n".join(lines)
+    sections: list[str] = []
+    if vault_memory:
+        sections.append(vault_memory)
+    if history:
+        sections.append("Previous turns in this conversation (oldest first):")
+        for m in history:
+            role = "Student" if m["role"] == "user" else "Tutor"
+            sections.append(f"{role}: {m['content']}")
+    sections.append("")
+    sections.append("New student message:")
+    sections.append(new_content)
+    return "\n".join(sections)

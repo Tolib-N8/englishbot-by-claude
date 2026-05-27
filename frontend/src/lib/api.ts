@@ -79,3 +79,24 @@ export type AppSettings = {
   native_language: string;
   model: string;
 };
+
+export type NoteSummary = {
+  path: string;
+  folder: string;
+  name: string;
+  title: string;
+  type: string | null;
+  cefr: string | null;
+  date: string | null;
+};
+
+export type NoteDetail = NoteSummary & {
+  frontmatter: Record<string, unknown>;
+  body: string;
+  links: string[];
+};
+
+export type SummarizeResponse = {
+  confirmation: string;
+  new_note_paths: string[];
+};
