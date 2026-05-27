@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+# englishbot — start/stop the local English-tutor app.
+# Usage: englishbot {start|stop|restart|status|logs|open|help}
+
+set -euo pipefail
+
+# Resolve project root from script location (works through symlinks).
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+PROJECT_ROOT="$(dirname "$SCRIPT_PATH")"
+
+RUN_DIR="$PROJECT_ROOT/data/.run"
+BACKEND_PID="$RUN_DIR/backend.pid"
+FRONTEND_PID="$RUN_DIR/frontend.pid"
+BACKEND_PGID="$RUN_DIR/backend.pgid"
+FRONTEND_PGID="$RUN_DIR/frontend.pgid"
+BACKEND_LOG="$RUN_DIR/backend.log"
+FRONTEND_LOG="$RUN_DIR/frontend.log"
+
+BACKEND_URL="http://127.0.0.1:8000/healthz"
+FRONTEND_URL="http://127.0.0.1:3000"
+
+mkdir -p "$RUN_DIR"
+
+# ---------- helpers ----------
+
+is_running() {
+    local pid_file="$1"
+    [[ -f "$pid_file" ]] || return 1
+    local pid
+    pid="$(cat "$pid_file" 2>/dev/null || true)"
+    [[ -n "${pid:-}" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+wait_url() {
+    local url="$1" label="$2" timeout="${3:-60}" i=0
+    until curl -fsS -o /dev/null "$url" 2>/dev/null; do
+        i=$((i+1))
+        if (( i >= timeout )); then
+            echo "✗ $label did not respond after ${timeout}s — see logs"
+            return 1
+        fi
+        sleep 1
+    done
+    echo "✓ $label ready"
+}
+
+start_one() {
+    local label="$1" pid_file="$2" pgid_file="$3" log_file="$4"
+    shift 4
+    if is_running "$pid_file"; then
+        echo "• $label already running (pid $(cat "$pid_file"))"
+        return 0
+    fi
+    # setsid puts the child in its own process group → stop_one can kill the whole tree.
+    setsid bash -c "exec \"\$@\" >> \"$log_file\" 2>&1" _ "$@" </dev/null &
+    local pid=$!
+    echo "$pid" > "$pid_file"
+    # process group id == pid of the setsid leader
+    echo "$pid" > "$pgid_file"
+    echo "▶ $label started (pid $pid, log $log_file)"
+}
+
+stop_one() {
+    local label="$1" pid_file="$2" pgid_file="$3"
+    if ! is_running "$pid_file"; then
+        rm -f "$pid_file" "$pgid_file"
+        echo "• $label not running"
+        return 0
+    fi
+    local pgid
+    if [[ -f "$pgid_file" ]]; then
+        pgid="$(cat "$pgid_file")"
+    else
+        pgid="$(cat "$pid_file")"
+    fi
+    # Kill the whole process group (negative PID).
+    kill -TERM -- "-$pgid" 2>/dev/null || kill -TERM "$pgid" 2>/dev/null || true
+    local i=0
+    while kill -0 "$pgid" 2>/dev/null && (( i < 20 )); do
+        sleep 0.25; i=$((i+1))
+    done
+    if kill -0 "$pgid" 2>/dev/null; then
+        kill -KILL -- "-$pgid" 2>/dev/null || true
+    fi
+    rm -f "$pid_file" "$pgid_file"
+    echo "■ $label stopped"
+}
+
+# ---------- commands ----------
+
+cmd_start() {
+    start_one "backend" "$BACKEND_PID" "$BACKEND_PGID" "$BACKEND_LOG" \
+        "$PROJECT_ROOT/backend/.venv/bin/uvicorn" \
+        --app-dir "$PROJECT_ROOT/backend" \
+        app.main:app --host 127.0.0.1 --port 8000
+
+    # Frontend: cd into the frontend dir so npm picks the right package.json.
+    start_one "frontend" "$FRONTEND_PID" "$FRONTEND_PGID" "$FRONTEND_LOG" \
+        bash -lc "cd '$PROJECT_ROOT/frontend' && exec npm run dev"
+
+    wait_url "$BACKEND_URL"  "backend  (http://localhost:8000)" 60 || true
+    wait_url "$FRONTEND_URL" "frontend (http://localhost:3000)" 60 || true
+    echo
+    echo "→ Open http://localhost:3000"
+}
+
+cmd_stop() {
+    stop_one "frontend" "$FRONTEND_PID" "$FRONTEND_PGID"
+    stop_one "backend"  "$BACKEND_PID"  "$BACKEND_PGID"
+}
+
+cmd_status() {
+    for entry in "backend:$BACKEND_PID:$BACKEND_URL" "frontend:$FRONTEND_PID:$FRONTEND_URL"; do
+        IFS=: read -r name pidf url <<< "$entry"
+        if is_running "$pidf"; then
+            if curl -fsS -o /dev/null "$url" 2>/dev/null; then
+                echo "✓ $name running (pid $(cat "$pidf"))  $url"
+            else
+                echo "… $name running (pid $(cat "$pidf"))  but $url not responding yet"
+            fi
+        else
+            echo "✗ $name stopped"
+        fi
+    done
+}
+
+cmd_logs() {
+    local which="${1:-both}"
+    case "$which" in
+        backend|be)   exec tail -n 80 -f "$BACKEND_LOG" ;;
+        frontend|fe)  exec tail -n 80 -f "$FRONTEND_LOG" ;;
+        both|all|"")  exec tail -n 40 -f "$BACKEND_LOG" "$FRONTEND_LOG" ;;
+        *)
+            echo "logs: backend | frontend | both"
+            return 1
+            ;;
+    esac
+}
+
+cmd_open() {
+    command -v xdg-open >/dev/null && xdg-open http://localhost:3000 >/dev/null 2>&1 &
+    echo "→ http://localhost:3000"
+}
+
+cmd_help() {
+    cat <<EOF
+englishbot — local English tutor controller
+
+Usage:
+  englishbot start          boot backend + frontend (idempotent)
+  englishbot stop           kill both
+  englishbot restart        stop then start
+  englishbot status         show what's running
+  englishbot logs [be|fe|both]   tail logs
+  englishbot open           xdg-open the UI
+  englishbot help           this message
+
+PID + logs live in: $RUN_DIR
+EOF
+}
+
+# ---------- dispatch ----------
+
+case "${1:-help}" in
+    start|up)       shift; cmd_start "$@" ;;
+    stop|down)      shift; cmd_stop "$@" ;;
+    restart)        shift; cmd_stop || true; sleep 1; cmd_start "$@" ;;
+    status|ps)      shift; cmd_status "$@" ;;
+    logs|log|tail)  shift; cmd_logs "$@" ;;
+    open)           shift; cmd_open "$@" ;;
+    help|-h|--help|"") cmd_help ;;
+    *)
+        echo "unknown command: $1" >&2
+        cmd_help
+        exit 1
+        ;;
+esac
