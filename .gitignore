@@ -28,6 +28,11 @@ data/*.db-journal
 data/audio/
 !data/.gitkeep
 
+# Misc DBs that ruvector / similar tools may drop in cwd
+ruvector.db
+*.db
+!data/.gitkeep
+
 # IDE
 .vscode/
 .idea/
