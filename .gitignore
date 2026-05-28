@@ -26,7 +26,11 @@ out/
 data/*.db
 data/*.db-journal
 data/audio/
+data/.run/
 !data/.gitkeep
+
+# Obsidian workspace (machine-specific)
+vault/.obsidian/
 
 # Misc DBs that ruvector / similar tools may drop in cwd
 ruvector.db
