@@ -127,6 +127,40 @@ export type Level = {
   conversations: number;
 };
 
+export type ExerciseType = "fill_blank" | "mcq" | "translate_ru_en" | "translate_en_ru";
+
+export type Exercise = {
+  id: number;
+  topic: string;
+  level: string;
+  type: ExerciseType;
+  prompt: string;
+  prompt_ru: string | null;
+  choices_json: string[] | null;
+  created_at: string;
+  attempted: boolean;
+  last_correct: boolean | null;
+};
+
+export type AttemptResult = {
+  is_correct: boolean;
+  feedback_ru: string | null;
+  answer: string;
+  explanation_ru: string | null;
+};
+
+export type TopicSuggestion = {
+  topic: string;
+  source: "roadmap" | "common" | string;
+};
+
+export type ExerciseStats = {
+  total: number;
+  attempted: number;
+  correct: number;
+  accuracy: number;
+};
+
 export type NoteSummary = {
   path: string;
   folder: string;
