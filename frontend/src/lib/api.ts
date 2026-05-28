@@ -119,6 +119,7 @@ export type Assessment = {
 
 export type Level = {
   assessment: Assessment | null;
+  target_band: string | null;
   words_total: number;
   words_mastered: number;
   topics: number;

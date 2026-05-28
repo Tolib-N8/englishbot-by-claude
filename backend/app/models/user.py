@@ -13,6 +13,7 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String, nullable=False, default="me")
     level: Mapped[str] = mapped_column(String, nullable=False, default="A1")
     native_language: Mapped[str] = mapped_column(String, nullable=False, default="ru")
+    target_band: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.current_timestamp()
     )

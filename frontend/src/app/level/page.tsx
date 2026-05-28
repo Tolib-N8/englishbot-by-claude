@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
 const CEFR_SCALE = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const IELTS_BANDS = ["4.0", "4.5", "5.0", "5.5", "6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0"];
 const CONFIDENCE_LABEL: Record<string, string> = {
   low: "низкая надёжность",
   medium: "средняя надёжность",
@@ -30,10 +31,17 @@ export default function LevelPage() {
     mutationFn: async () => (await api.post<Level>("/api/v1/level/assess")).data,
     onSuccess: (data) => qc.setQueryData(["level"], data),
   });
+  const setTarget = useMutation({
+    mutationFn: async (band: string) =>
+      (await api.patch<Level>("/api/v1/level/target", { target_band: band })).data,
+    onSuccess: (data) => qc.setQueryData(["level"], data),
+  });
 
   const lvl = level.data;
   const a = lvl?.assessment;
   const currentIdx = a ? CEFR_SCALE.indexOf(a.cefr_level) : -1;
+  // Roadmap is stale if the chosen target differs from what the stored roadmap was built for.
+  const roadmapStale = !!a && !!lvl?.target_band && a.target_band !== lvl.target_band;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -48,6 +56,40 @@ export default function LevelPage() {
           </Button>
         </div>
       </div>
+
+      {/* Target band selector */}
+      <Card>
+        <CardContent className="py-4 flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium">Целевой балл IELTS:</span>
+          <select
+            value={lvl?.target_band ?? ""}
+            onChange={(e) => setTarget.mutate(e.target.value)}
+            disabled={setTarget.isPending}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">— не задана —</option>
+            {IELTS_BANDS.map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+          {setTarget.isPending && <span className="text-xs text-muted-foreground">сохраняю…</span>}
+          <span className="text-xs text-muted-foreground">
+            план подготовки строится до этого балла
+          </span>
+        </CardContent>
+      </Card>
+
+      {roadmapStale && (
+        <div className="rounded-md border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 text-sm text-blue-900 dark:text-blue-200 flex items-center justify-between gap-3">
+          <span>
+            Цель изменилась (план составлен для IELTS {a?.target_band}). Переоцени, чтобы
+            обновить роудмеп до {lvl?.target_band}.
+          </span>
+          <Button size="sm" onClick={() => assess.mutate()} disabled={assess.isPending}>
+            {assess.isPending ? "…" : "Обновить план"}
+          </Button>
+        </div>
+      )}
 
       {!a ? (
         <Card>

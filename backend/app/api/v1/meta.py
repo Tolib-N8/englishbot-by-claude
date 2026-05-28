@@ -15,6 +15,7 @@ from app.schemas.meta import (
     LevelOut,
     Settings as SettingsSchema,
     SettingsUpdate,
+    TargetUpdate,
 )
 from app.services.assessor import assess_writing
 from app.services.vault import list_notes
@@ -84,18 +85,37 @@ def _to_out(a: Assessment) -> AssessmentOut:
 
 @router.get("/level", response_model=LevelOut)
 async def get_level(db: AsyncSession = Depends(get_db)):
+    user = await get_or_create_singleton_user(db)
     signals = await _activity_signals(db)
     latest = (
         await db.execute(select(Assessment).order_by(Assessment.created_at.desc()).limit(1))
     ).scalar_one_or_none()
     return LevelOut(
         assessment=_to_out(latest) if latest else None,
+        target_band=user.target_band,
+        **signals,
+    )
+
+
+@router.patch("/level/target", response_model=LevelOut)
+async def set_target(body: TargetUpdate, db: AsyncSession = Depends(get_db)):
+    user = await get_or_create_singleton_user(db)
+    user.target_band = body.target_band
+    await db.commit()
+    signals = await _activity_signals(db)
+    latest = (
+        await db.execute(select(Assessment).order_by(Assessment.created_at.desc()).limit(1))
+    ).scalar_one_or_none()
+    return LevelOut(
+        assessment=_to_out(latest) if latest else None,
+        target_band=user.target_band,
         **signals,
     )
 
 
 @router.post("/level/assess", response_model=LevelOut)
 async def assess_level(db: AsyncSession = Depends(get_db)):
+    user = await get_or_create_singleton_user(db)
     rows = (
         await db.execute(
             select(Message.content)
@@ -104,7 +124,7 @@ async def assess_level(db: AsyncSession = Depends(get_db)):
         )
     ).scalars().all()
 
-    result = await assess_writing(list(rows))
+    result = await assess_writing(list(rows), target_band=user.target_band)
 
     record = Assessment(
         cefr_level=result.cefr_level,
@@ -126,4 +146,4 @@ async def assess_level(db: AsyncSession = Depends(get_db)):
     await db.refresh(record)
 
     signals = await _activity_signals(db)
-    return LevelOut(assessment=_to_out(record), **signals)
+    return LevelOut(assessment=_to_out(record), target_band=user.target_band, **signals)

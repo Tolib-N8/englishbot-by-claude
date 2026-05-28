@@ -37,12 +37,25 @@ Important honesty rules:
 - Be specific and actionable. Comments and feedback in RUSSIAN; quotes stay in English."""
 
 
-def _build_prompt(samples: list[str]) -> str:
+def _build_prompt(samples: list[str], target_band: str | None) -> str:
     joined = "\n".join(f"- {s}" for s in samples)
+    if target_band:
+        target_line = (
+            f"The learner's CHOSEN target is IELTS {target_band}. Build the roadmap to reach "
+            f"EXACTLY that band, and set target_band to \"{target_band}\". The roadmap may need "
+            f"more phases if the gap is large — that's fine, be realistic about the effort."
+        )
+    else:
+        target_line = (
+            "The learner has not chosen a target. Pick a realistic next target (current + ~0.5–1.0) "
+            "and set target_band to it."
+        )
     return f"""Assess this learner's written English. These are all the English sentences they
 have produced in chat (Russian-only messages were filtered out):
 
 {joined}
+
+{target_line}
 
 Reply with ONLY a fenced JSON block in EXACTLY this shape:
 
@@ -82,8 +95,8 @@ Rules:
 - ielts_band is a single number like "5.5" reflecting WRITTEN production only.
 - 3-6 evidence items quoting the learner's actual sentences (good or bad).
 - confidence: "low" | "medium" | "high" — be honest about the sample size.
-- target_band: the next realistic IELTS band to aim for (current + ~0.5–1.0).
-- roadmap: 3-5 ORDERED phases that take the learner from the current band to target_band.
+- target_band: the learner's chosen target band (use the one specified above if given).
+- roadmap: ORDERED phases (3-7) that take the learner from the current band to target_band.
   Each phase has title (RU), skill, target_ru (what success looks like), actions_ru
   (2-4 concrete tasks), and est_weeks (rough estimate). Phases must address the specific
   weaknesses you found in THIS learner's writing — not generic advice.
@@ -132,7 +145,9 @@ def _extract_json(text: str) -> dict[str, Any] | None:
     return None
 
 
-async def assess_writing(user_messages: list[str]) -> AssessmentResult:
+async def assess_writing(
+    user_messages: list[str], target_band: str | None = None
+) -> AssessmentResult:
     samples = [m.strip() for m in user_messages if _looks_english(m)]
     word_count = sum(len(s.split()) for s in samples)
 
@@ -148,14 +163,14 @@ async def assess_writing(user_messages: list[str]) -> AssessmentResult:
             next_steps=["Напиши хотя бы несколько предложений на английском в чате."],
             evidence=[],
             roadmap=[],
-            target_band=None,
+            target_band=target_band,
             based_on_messages=0,
             based_on_words=0,
         )
 
     reply = await claude_complete(
         system_prompt=ASSESSOR_SYSTEM,
-        user_message=_build_prompt(samples),
+        user_message=_build_prompt(samples, target_band),
     )
     data = _extract_json(reply) or {}
 
@@ -170,7 +185,8 @@ async def assess_writing(user_messages: list[str]) -> AssessmentResult:
         next_steps=list(data.get("next_steps") or []),
         evidence=list(data.get("evidence") or []),
         roadmap=list(data.get("roadmap") or []),
-        target_band=(str(data["target_band"]) if data.get("target_band") else None),
+        # User's explicit choice wins; otherwise use Claude's suggestion.
+        target_band=target_band or (str(data["target_band"]) if data.get("target_band") else None),
         based_on_messages=len(samples),
         based_on_words=word_count,
     )

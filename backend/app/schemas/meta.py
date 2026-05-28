@@ -48,8 +48,13 @@ class AssessmentOut(BaseModel):
     created_at: str
 
 
+class TargetUpdate(BaseModel):
+    target_band: str | None = None
+
+
 class LevelOut(BaseModel):
     assessment: AssessmentOut | None
+    target_band: str | None = None
     words_total: int
     words_mastered: int
     topics: int
