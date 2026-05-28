@@ -80,17 +80,40 @@ export type AppSettings = {
   model: string;
 };
 
+export type Skill = {
+  name: string;
+  cefr: string | null;
+  ielts: string | null;
+  comment_ru: string | null;
+};
+
+export type Evidence = {
+  quote: string;
+  issue_ru: string | null;
+};
+
+export type Assessment = {
+  cefr_level: string;
+  ielts_band: string | null;
+  confidence: "low" | "medium" | "high" | string;
+  summary_ru: string;
+  skills: Skill[];
+  strengths: string[];
+  weaknesses: string[];
+  next_steps: string[];
+  evidence: Evidence[];
+  based_on_messages: number;
+  based_on_words: number;
+  created_at: string;
+};
+
 export type Level = {
-  level: string;
-  declared_level: string;
-  estimated_level: string;
-  next_level: string | null;
-  progress_to_next: number;
-  points: number;
+  assessment: Assessment | null;
   words_total: number;
   words_mastered: number;
   topics: number;
   sessions: number;
+  conversations: number;
 };
 
 export type NoteSummary = {

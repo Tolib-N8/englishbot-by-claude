@@ -11,14 +11,37 @@ class SettingsUpdate(BaseModel):
     level: str | None = None
 
 
+class Skill(BaseModel):
+    name: str
+    cefr: str | None = None
+    ielts: str | None = None
+    comment_ru: str | None = None
+
+
+class Evidence(BaseModel):
+    quote: str
+    issue_ru: str | None = None
+
+
+class AssessmentOut(BaseModel):
+    cefr_level: str
+    ielts_band: str | None
+    confidence: str
+    summary_ru: str
+    skills: list[Skill]
+    strengths: list[str]
+    weaknesses: list[str]
+    next_steps: list[str]
+    evidence: list[Evidence]
+    based_on_messages: int
+    based_on_words: int
+    created_at: str
+
+
 class LevelOut(BaseModel):
-    level: str
-    declared_level: str
-    estimated_level: str
-    next_level: str | None
-    progress_to_next: int
-    points: float
+    assessment: AssessmentOut | None
     words_total: int
     words_mastered: int
     topics: int
     sessions: int
+    conversations: int
