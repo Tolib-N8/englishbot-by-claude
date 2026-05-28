@@ -31,6 +31,7 @@ export default function ReviewPage() {
       setRevealed(false);
       qc.invalidateQueries({ queryKey: ["due-cards"] });
       qc.invalidateQueries({ queryKey: ["flashcard-stats"] });
+      qc.invalidateQueries({ queryKey: ["level"] });
     },
   });
 

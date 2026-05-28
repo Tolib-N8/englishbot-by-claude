@@ -4,9 +4,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.deps import get_or_create_singleton_user
-from app.schemas.meta import Settings as SettingsSchema, SettingsUpdate
+from app.schemas.meta import LevelOut, Settings as SettingsSchema, SettingsUpdate
+from app.services.level_estimator import estimate_level
 
 router = APIRouter()
+
+
+@router.get("/level", response_model=LevelOut)
+async def get_level(db: AsyncSession = Depends(get_db)):
+    user = await get_or_create_singleton_user(db)
+    est = await estimate_level(db, user.level)
+    return LevelOut(
+        level=est.level,
+        declared_level=est.declared_level,
+        estimated_level=est.estimated_level,
+        next_level=est.next_level,
+        progress_to_next=est.progress_to_next,
+        points=est.points,
+        words_total=est.words_total,
+        words_mastered=est.words_mastered,
+        topics=est.topics,
+        sessions=est.sessions,
+    )
 
 
 @router.get("/settings", response_model=SettingsSchema)

@@ -80,6 +80,19 @@ export type AppSettings = {
   model: string;
 };
 
+export type Level = {
+  level: string;
+  declared_level: string;
+  estimated_level: string;
+  next_level: string | null;
+  progress_to_next: number;
+  points: number;
+  words_total: number;
+  words_mastered: number;
+  topics: number;
+  sessions: number;
+};
+
 export type NoteSummary = {
   path: string;
   folder: string;

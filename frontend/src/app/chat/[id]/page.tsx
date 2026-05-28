@@ -39,6 +39,9 @@ export default function ChatPage() {
     onSuccess: (data) => {
       setSummaryMsg(data.confirmation);
       qc.invalidateQueries({ queryKey: ["notes-all"] });
+      qc.invalidateQueries({ queryKey: ["flashcard-stats"] });
+      qc.invalidateQueries({ queryKey: ["vocab"] });
+      qc.invalidateQueries({ queryKey: ["level"] });
     },
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : "unknown error";
