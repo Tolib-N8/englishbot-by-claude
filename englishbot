@@ -89,10 +89,13 @@ stop_one() {
 # ---------- commands ----------
 
 cmd_start() {
+    # Bind 0.0.0.0 so the mobile app can reach the backend over Tailscale/LAN.
+    # Override with BACKEND_HOST=127.0.0.1 englishbot start to restrict to localhost.
+    local backend_host="${BACKEND_HOST:-0.0.0.0}"
     start_one "backend" "$BACKEND_PID" "$BACKEND_PGID" "$BACKEND_LOG" \
         "$PROJECT_ROOT/backend/.venv/bin/uvicorn" \
         --app-dir "$PROJECT_ROOT/backend" \
-        app.main:app --host 127.0.0.1 --port 8000
+        app.main:app --host "$backend_host" --port 8000
 
     # Frontend: cd into the frontend dir so npm picks the right package.json.
     start_one "frontend" "$FRONTEND_PID" "$FRONTEND_PGID" "$FRONTEND_LOG" \
