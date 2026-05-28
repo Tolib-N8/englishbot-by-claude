@@ -32,6 +32,15 @@ data/.run/
 # Obsidian workspace (machine-specific)
 vault/.obsidian/
 
+# Personal learning content — keep local, never publish.
+# Folder structure is preserved via .gitkeep; index.md is a generic template.
+vault/topics/*
+vault/vocabulary/*
+vault/sessions/*
+!vault/topics/.gitkeep
+!vault/vocabulary/.gitkeep
+!vault/sessions/.gitkeep
+
 # Misc DBs that ruvector / similar tools may drop in cwd
 ruvector.db
 *.db
