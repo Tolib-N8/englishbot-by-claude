@@ -23,6 +23,14 @@ class Evidence(BaseModel):
     issue_ru: str | None = None
 
 
+class RoadmapPhase(BaseModel):
+    title: str
+    skill: str | None = None
+    target_ru: str | None = None
+    actions_ru: list[str] = []
+    est_weeks: int | None = None
+
+
 class AssessmentOut(BaseModel):
     cefr_level: str
     ielts_band: str | None
@@ -33,6 +41,8 @@ class AssessmentOut(BaseModel):
     weaknesses: list[str]
     next_steps: list[str]
     evidence: list[Evidence]
+    roadmap: list[RoadmapPhase]
+    target_band: str | None
     based_on_messages: int
     based_on_words: int
     created_at: str

@@ -92,6 +92,14 @@ export type Evidence = {
   issue_ru: string | null;
 };
 
+export type RoadmapPhase = {
+  title: string;
+  skill: string | null;
+  target_ru: string | null;
+  actions_ru: string[];
+  est_weeks: number | null;
+};
+
 export type Assessment = {
   cefr_level: string;
   ielts_band: string | null;
@@ -102,6 +110,8 @@ export type Assessment = {
   weaknesses: string[];
   next_steps: string[];
   evidence: Evidence[];
+  roadmap: RoadmapPhase[];
+  target_band: string | null;
   based_on_messages: number;
   based_on_words: number;
   created_at: string;

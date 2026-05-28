@@ -63,6 +63,16 @@ Reply with ONLY a fenced JSON block in EXACTLY this shape:
   "next_steps": ["что конкретно делать чтобы поднять балл", "..."],
   "evidence": [
     {{"quote": "I have 25 years old", "issue_ru": "калька с русского; возраст через 'to be': I am 25."}}
+  ],
+  "target_band": "5.5",
+  "roadmap": [
+    {{
+      "title": "Этап 1: Времена для рутины",
+      "skill": "Grammar",
+      "target_ru": "Перестать путать Present Simple и Present Continuous",
+      "actions_ru": ["Выучить маркеры: every day/usually → Present Simple", "Написать 10 предложений о привычках"],
+      "est_weeks": 1
+    }}
   ]
 }}
 ```
@@ -72,6 +82,12 @@ Rules:
 - ielts_band is a single number like "5.5" reflecting WRITTEN production only.
 - 3-6 evidence items quoting the learner's actual sentences (good or bad).
 - confidence: "low" | "medium" | "high" — be honest about the sample size.
+- target_band: the next realistic IELTS band to aim for (current + ~0.5–1.0).
+- roadmap: 3-5 ORDERED phases that take the learner from the current band to target_band.
+  Each phase has title (RU), skill, target_ru (what success looks like), actions_ru
+  (2-4 concrete tasks), and est_weeks (rough estimate). Phases must address the specific
+  weaknesses you found in THIS learner's writing — not generic advice.
+- All RU fields in Russian; quotes stay in English.
 - No text outside the JSON block."""
 
 
@@ -86,6 +102,8 @@ class AssessmentResult:
     weaknesses: list[str]
     next_steps: list[str]
     evidence: list[dict]
+    roadmap: list[dict]
+    target_band: str | None
     based_on_messages: int
     based_on_words: int
 
@@ -129,6 +147,8 @@ async def assess_writing(user_messages: list[str]) -> AssessmentResult:
             weaknesses=[],
             next_steps=["Напиши хотя бы несколько предложений на английском в чате."],
             evidence=[],
+            roadmap=[],
+            target_band=None,
             based_on_messages=0,
             based_on_words=0,
         )
@@ -149,6 +169,8 @@ async def assess_writing(user_messages: list[str]) -> AssessmentResult:
         weaknesses=list(data.get("weaknesses") or []),
         next_steps=list(data.get("next_steps") or []),
         evidence=list(data.get("evidence") or []),
+        roadmap=list(data.get("roadmap") or []),
+        target_band=(str(data["target_band"]) if data.get("target_band") else None),
         based_on_messages=len(samples),
         based_on_words=word_count,
     )

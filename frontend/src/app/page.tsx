@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, type Conversation, type FlashcardStats, type AppSettings } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LevelCard } from "@/components/level/LevelCard";
+import { LevelSummary } from "@/components/level/LevelSummary";
 import { formatDate } from "@/lib/utils";
 
 export default function HomePage() {
@@ -31,7 +31,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      <LevelCard />
+      <LevelSummary />
 
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
         <Card>

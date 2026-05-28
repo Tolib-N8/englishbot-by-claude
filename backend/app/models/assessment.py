@@ -22,5 +22,7 @@ class Assessment(Base):
     weaknesses_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
     next_steps_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
     evidence_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    roadmap_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    target_band: Mapped[str | None] = mapped_column(String, nullable=True)
     based_on_messages: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     based_on_words: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

@@ -74,6 +74,8 @@ def _to_out(a: Assessment) -> AssessmentOut:
         weaknesses=a.weaknesses_json or [],
         next_steps=a.next_steps_json or [],
         evidence=a.evidence_json or [],
+        roadmap=a.roadmap_json or [],
+        target_band=a.target_band,
         based_on_messages=a.based_on_messages,
         based_on_words=a.based_on_words,
         created_at=a.created_at.isoformat(),
@@ -114,6 +116,8 @@ async def assess_level(db: AsyncSession = Depends(get_db)):
         weaknesses_json=result.weaknesses,
         next_steps_json=result.next_steps,
         evidence_json=result.evidence,
+        roadmap_json=result.roadmap,
+        target_band=result.target_band,
         based_on_messages=result.based_on_messages,
         based_on_words=result.based_on_words,
     )
