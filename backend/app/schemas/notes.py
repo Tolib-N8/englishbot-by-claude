@@ -20,3 +20,4 @@ class NoteDetail(NoteSummary):
 class SummarizeResponse(BaseModel):
     confirmation: str
     new_note_paths: list[str]
+    cards_added: int = 0

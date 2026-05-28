@@ -8,6 +8,7 @@ from app.models.message import Message
 from app.schemas.notes import NoteDetail, NoteSummary, SummarizeResponse
 from app.services.session_summarizer import summarize_conversation
 from app.services.vault import Note, list_notes, read_note_by_path
+from app.services.vault_sync import sync_vault_vocab_to_deck
 
 router = APIRouter()
 
@@ -72,9 +73,20 @@ async def summarize(conversation_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(400, "conversation has no messages")
 
     result = await summarize_conversation(conversation_id, list(msgs))
+
+    # Mirror the freshly-written vault vocabulary into the flashcard deck so
+    # new words show up on the dashboard and become reviewable.
+    sync = await sync_vault_vocab_to_deck(db)
+
+    confirmation = f"Сохранено {len(result.new_note_paths)} заметок"
+    if result.skipped_paths:
+        confirmation += f" (пропущено {len(result.skipped_paths)})"
+    if sync["cards_added"]:
+        confirmation += f"; добавлено {sync['cards_added']} карточек в колоду"
+    confirmation += "."
+
     return SummarizeResponse(
-        confirmation=f"Сохранено {len(result.new_note_paths)} заметок"
-        + (f" (пропущено {len(result.skipped_paths)})" if result.skipped_paths else "")
-        + ".",
+        confirmation=confirmation,
         new_note_paths=result.new_note_paths,
+        cards_added=sync["cards_added"],
     )

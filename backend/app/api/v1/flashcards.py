@@ -14,8 +14,15 @@ from app.schemas.flashcard import (
     ReviewRequest,
 )
 from app.services.srs import SrsState, sm2
+from app.services.vault_sync import sync_vault_vocab_to_deck
 
 router = APIRouter()
+
+
+@router.post("/sync-vault")
+async def sync_vault(db: AsyncSession = Depends(get_db)):
+    """Mirror every vault vocabulary note into the deck (idempotent)."""
+    return await sync_vault_vocab_to_deck(db)
 
 
 def _with_vocab(fc: Flashcard) -> FlashcardWithVocab:
