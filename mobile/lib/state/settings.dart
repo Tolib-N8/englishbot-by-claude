@@ -4,7 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Holds the backend base URL (e.g. a Tailscale address) and persists it.
 class SettingsModel extends ChangeNotifier {
   static const _key = 'backend_base_url';
-  static const defaultUrl = 'http://100.64.0.1:8000';
+  // Default to localhost (running on the same machine as the backend).
+  // On a phone, change this in Settings to the computer's Tailscale IP.
+  static const defaultUrl = 'http://localhost:8000';
 
   String _baseUrl = defaultUrl;
   bool _loaded = false;

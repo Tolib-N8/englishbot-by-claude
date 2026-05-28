@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'api/client.dart';
 import 'state/settings.dart';
 import 'screens/home_screen.dart';
+import 'screens/level_screen.dart';
 import 'screens/chat_list_screen.dart';
 import 'screens/exercises_screen.dart';
 import 'screens/cards_screen.dart';
@@ -47,18 +48,22 @@ class RootShell extends StatefulWidget {
 class _RootShellState extends State<RootShell> {
   int _index = 0;
 
-  static const _titles = ['Home', 'Chat', 'Grammar', 'Cards'];
+  static const _titles = ['English Tutor', 'Уровень', 'Chat', 'Grammar', 'Cards'];
+
+  void _go(int i) => setState(() => _index = i);
 
   Widget _body() {
     switch (_index) {
       case 1:
-        return const ChatListScreen();
+        return const LevelScreen();
       case 2:
-        return const ExercisesScreen();
+        return const ChatListScreen();
       case 3:
+        return const ExercisesScreen();
+      case 4:
         return const CardsScreen();
       default:
-        return const HomeScreen();
+        return HomeScreen(onNavigate: _go);
     }
   }
 
@@ -86,6 +91,7 @@ class _RootShellState extends State<RootShell> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.speed_outlined), selectedIcon: Icon(Icons.speed), label: 'Level'),
           NavigationDestination(icon: Icon(Icons.chat_outlined), selectedIcon: Icon(Icons.chat), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Grammar'),
           NavigationDestination(icon: Icon(Icons.style_outlined), selectedIcon: Icon(Icons.style), label: 'Cards'),
