@@ -161,6 +161,22 @@ export type ExerciseStats = {
   accuracy: number;
 };
 
+export type PronunciationWord = {
+  word: string;
+  status: "matched" | "missed" | "substituted";
+  heard?: string | null;
+};
+
+export type PronunciationResult = {
+  id: number;
+  target_text: string;
+  transcript: string;
+  overall_score: number;
+  per_word: PronunciationWord[];
+  tip_ru: string | null;
+  created_at: string;
+};
+
 export type NoteSummary = {
   path: string;
   folder: string;

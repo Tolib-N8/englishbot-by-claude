@@ -245,3 +245,40 @@ class ChatEvent {
   final Map<String, dynamic> data;
   ChatEvent(this.type, this.data);
 }
+
+class PronunciationWord {
+  final String word;
+  final String status; // matched | missed | substituted
+  final String? heard;
+  PronunciationWord({required this.word, required this.status, this.heard});
+  factory PronunciationWord.fromJson(Map<String, dynamic> j) => PronunciationWord(
+        word: j['word'] ?? '',
+        status: j['status'] ?? 'missed',
+        heard: j['heard'],
+      );
+}
+
+class PronunciationResult {
+  final int id;
+  final String targetText;
+  final String transcript;
+  final double overallScore;
+  final List<PronunciationWord> perWord;
+  final String? tipRu;
+  PronunciationResult({
+    required this.id,
+    required this.targetText,
+    required this.transcript,
+    required this.overallScore,
+    required this.perWord,
+    this.tipRu,
+  });
+  factory PronunciationResult.fromJson(Map<String, dynamic> j) => PronunciationResult(
+        id: j['id'],
+        targetText: j['target_text'] ?? '',
+        transcript: j['transcript'] ?? '',
+        overallScore: (j['overall_score'] as num?)?.toDouble() ?? 0.0,
+        perWord: (j['per_word'] as List?)?.map((e) => PronunciationWord.fromJson(e)).toList() ?? const [],
+        tipRu: j['tip_ru'],
+      );
+}

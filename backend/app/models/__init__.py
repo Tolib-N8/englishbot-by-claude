@@ -3,6 +3,7 @@ from app.models.conversation import Conversation
 from app.models.exercise import ExerciseAttempt, GrammarExercise
 from app.models.flashcard import Flashcard
 from app.models.message import Message
+from app.models.pronunciation import PronunciationAttempt
 from app.models.user import User
 from app.models.vocabulary import Vocabulary
 
@@ -15,4 +16,5 @@ __all__ = [
     "Assessment",
     "GrammarExercise",
     "ExerciseAttempt",
+    "PronunciationAttempt",
 ]

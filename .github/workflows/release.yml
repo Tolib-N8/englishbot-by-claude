@@ -68,27 +68,9 @@ jobs:
           name: windows-exe
           path: mobile/EnglishTutor-windows-x64.zip
 
-  linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: stable
-      - name: Install Linux build deps
-        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
-      - name: Get appimagetool
-        run: |
-          curl -L -o /usr/local/bin/appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          sudo chmod +x /usr/local/bin/appimagetool
-      - run: flutter pub get
-      - name: Build AppImage
-        run: bash scripts/build_appimage.sh
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-appimage
-          path: mobile/dist/EnglishTutor-x86_64.AppImage
+  # Linux AppImage build is disabled: the `record` plugin's Linux impl is not
+  # compatible with the current platform interface, so a Flutter Linux build
+  # with pronunciation breaks. Linux users open the web UI via Tailscale.
 
   ios:
     runs-on: macos-latest
@@ -117,7 +99,7 @@ jobs:
           path: mobile/EnglishTutor-ios-unsigned.ipa
 
   release:
-    needs: [android, windows, linux, ios]
+    needs: [android, windows, ios]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -132,6 +114,5 @@ jobs:
           files: |
             artifacts/android-apk/app-release.apk
             artifacts/windows-exe/EnglishTutor-windows-x64.zip
-            artifacts/linux-appimage/EnglishTutor-x86_64.AppImage
             artifacts/ios-ipa/EnglishTutor-ios-unsigned.ipa
           generate_release_notes: true

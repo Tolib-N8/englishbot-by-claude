@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Network access for talking to the backend (LAN / Tailscale). -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Pronunciation practice records short clips. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="English Tutor"
         android:name="${applicationName}"

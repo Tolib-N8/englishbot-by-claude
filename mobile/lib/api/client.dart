@@ -153,4 +153,21 @@ class ApiClient {
   Future<AttemptResult> attempt(int exerciseId, String answer) async =>
       AttemptResult.fromJson(
           await _post('/api/v1/exercises/$exerciseId/attempt', {'user_answer': answer}));
+
+  // --- Pronunciation ---
+  Future<String> practicePhrase() async {
+    final data = await _get('/api/v1/pronounce/practice') as Map<String, dynamic>;
+    return data['phrase'] ?? '';
+  }
+
+  Future<PronunciationResult> uploadPronunciation(String audioPath, String targetText) async {
+    final req = http.MultipartRequest('POST', _u('/api/v1/pronounce/transcribe'))
+      ..fields['target_text'] = targetText
+      ..files.add(await http.MultipartFile.fromPath('audio', audioPath));
+    final res = await http.Response.fromStream(await req.send().timeout(const Duration(seconds: 300)));
+    if (res.statusCode >= 400) {
+      throw ApiException('HTTP ${res.statusCode}');
+    }
+    return PronunciationResult.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
+  }
 }
