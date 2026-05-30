@@ -10,6 +10,12 @@ on:
 
 env:
   FLUTTER_VERSION: "3.44.0"
+  # Set as a repo variable: Settings → Secrets and variables → Variables → BACKEND_URL.
+  # When set, all builds bake this URL into the app as the default backend address.
+  BACKEND_URL: ${{ vars.BACKEND_URL }}
+
+# Single place to compute the --dart-define block for every build.
+# (kept as a workflow-level env so each job can splice it in)
 
 defaults:
   run:
@@ -29,7 +35,11 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
       - run: flutter pub get
-      - run: flutter build apk --release
+      - name: Build APK
+        run: |
+          DEF=""
+          if [ -n "$BACKEND_URL" ]; then DEF="--dart-define=BACKEND_URL=$BACKEND_URL"; fi
+          flutter build apk --release $DEF
       - uses: actions/upload-artifact@v4
         with:
           name: android-apk
@@ -44,7 +54,12 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
       - run: flutter pub get
-      - run: flutter build windows --release
+      - name: Build Windows
+        shell: pwsh
+        run: |
+          $def = ""
+          if ($env:BACKEND_URL) { $def = "--dart-define=BACKEND_URL=$env:BACKEND_URL" }
+          flutter build windows --release $def
       - name: Zip Windows build
         run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath EnglishTutor-windows-x64.zip
         shell: pwsh

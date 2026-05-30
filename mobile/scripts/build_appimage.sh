@@ -9,7 +9,14 @@ cd "$MOBILE_DIR"
 
 APPIMAGETOOL="${APPIMAGETOOL:-appimagetool}"
 
-flutter build linux --release
+# Optional: bake a backend URL into the build (Tailscale/LAN). Falls back to
+# localhost if unset (matches the in-app default).
+DART_DEFINES=()
+if [ -n "${BACKEND_URL:-}" ]; then
+    DART_DEFINES+=(--dart-define="BACKEND_URL=$BACKEND_URL")
+fi
+
+flutter build linux --release "${DART_DEFINES[@]}"
 
 rm -rf .appdir dist
 mkdir -p .appdir/usr/bin dist
