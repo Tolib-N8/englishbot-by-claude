@@ -68,9 +68,27 @@ jobs:
           name: windows-exe
           path: mobile/EnglishTutor-windows-x64.zip
 
-  # Linux AppImage build is disabled: the `record` plugin's Linux impl is not
-  # compatible with the current platform interface, so a Flutter Linux build
-  # with pronunciation breaks. Linux users open the web UI via Tailscale.
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - name: Install Linux build deps
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libfuse2
+      - name: Get appimagetool
+        run: |
+          curl -L -o /usr/local/bin/appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          sudo chmod +x /usr/local/bin/appimagetool
+      - run: flutter pub get
+      - name: Build AppImage
+        run: bash scripts/build_appimage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: mobile/dist/EnglishTutor-x86_64.AppImage
 
   ios:
     runs-on: macos-latest
@@ -82,12 +100,16 @@ jobs:
           channel: stable
       - run: flutter pub get
       - name: Build iOS (unsigned)
+        # `flutter build ios --no-codesign` may exit non-zero at the .ipa step
+        # because plugin entitlements (e.g. mic) confuse the wrapper. The .app
+        # gets built either way; we package it manually below.
         run: |
           DEF=""
           if [ -n "$BACKEND_URL" ]; then DEF="--dart-define=BACKEND_URL=$BACKEND_URL"; fi
-          flutter build ios --release --no-codesign $DEF
+          flutter build ios --release --no-codesign $DEF || true
+          test -d build/ios/iphoneos/Runner.app
       - name: Package unsigned IPA
-        # AltStore re-signs with the user's free Apple ID, so an unsigned IPA is enough.
+        # AltStore re-signs with the user's free Apple ID.
         run: |
           cd build/ios/iphoneos
           mkdir -p Payload
@@ -99,7 +121,7 @@ jobs:
           path: mobile/EnglishTutor-ios-unsigned.ipa
 
   release:
-    needs: [android, windows, ios]
+    needs: [android, windows, linux, ios]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -114,5 +136,6 @@ jobs:
           files: |
             artifacts/android-apk/app-release.apk
             artifacts/windows-exe/EnglishTutor-windows-x64.zip
+            artifacts/linux-appimage/EnglishTutor-x86_64.AppImage
             artifacts/ios-ipa/EnglishTutor-ios-unsigned.ipa
           generate_release_notes: true
