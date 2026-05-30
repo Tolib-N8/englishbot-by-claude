@@ -1,3 +1,7 @@
+# Build artifacts / packaging
+/dist/
+/.appdir/
+
 # Miscellaneous
 *.class
 *.log
