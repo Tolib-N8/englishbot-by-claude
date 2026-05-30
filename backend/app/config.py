@@ -22,6 +22,16 @@ class Settings(BaseSettings):
 
     database_url: str = f"sqlite+aiosqlite:///{DATA_DIR}/data.db"
     backend_cors_origins: str = "http://localhost:3000"
+    # When set, takes precedence over backend_cors_origins. Lets the web UI be
+    # opened from any LAN address or Tailscale IP (port 3000) without listing
+    # them one by one.
+    backend_cors_regex: str = (
+        r"https?://(localhost|127\.0\.0\.1"
+        r"|192\.168\.\d+\.\d+"
+        r"|10\.\d+\.\d+\.\d+"
+        r"|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+"
+        r"|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+):3000"
+    )
     log_level: str = "INFO"
 
     user_level: str = "A1"
