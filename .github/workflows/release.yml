@@ -90,8 +90,34 @@ jobs:
           name: linux-appimage
           path: mobile/dist/EnglishTutor-x86_64.AppImage
 
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter pub get
+      - name: Build iOS (unsigned)
+        run: |
+          DEF=""
+          if [ -n "$BACKEND_URL" ]; then DEF="--dart-define=BACKEND_URL=$BACKEND_URL"; fi
+          flutter build ios --release --no-codesign $DEF
+      - name: Package unsigned IPA
+        # AltStore re-signs with the user's free Apple ID, so an unsigned IPA is enough.
+        run: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r ../../../EnglishTutor-ios-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: mobile/EnglishTutor-ios-unsigned.ipa
+
   release:
-    needs: [android, windows, linux]
+    needs: [android, windows, linux, ios]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
@@ -107,4 +133,5 @@ jobs:
             artifacts/android-apk/app-release.apk
             artifacts/windows-exe/EnglishTutor-windows-x64.zip
             artifacts/linux-appimage/EnglishTutor-x86_64.AppImage
+            artifacts/ios-ipa/EnglishTutor-ios-unsigned.ipa
           generate_release_notes: true
