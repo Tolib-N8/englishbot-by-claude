@@ -94,6 +94,38 @@ class _LevelScreenState extends State<LevelScreen> {
           ),
           const SizedBox(height: 12),
 
+          if (_assessing) ...[
+            Card(
+              color: Colors.blue.withValues(alpha: 0.08),
+              child: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Claude анализирует твою речь…',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          SizedBox(height: 2),
+                          Text('Это занимает 60–120 секунд. Не закрывай экран.',
+                              style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           if (a == null)
             const Card(
               child: Padding(
