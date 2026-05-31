@@ -122,22 +122,85 @@ async def score_attempt(target: str, transcript: str) -> PronunciationResult:
 
 
 # --- Practice phrase generator (Claude-driven) -------------------------------
+#
+# Phrase generation takes ~10 s per call. We hide that by keeping an in-memory
+# pool: every request pops a ready phrase instantly and triggers a background
+# refill when the pool runs low.
+
+import asyncio  # noqa: E402
 
 PHRASE_SYSTEM = (
-    "You generate a short English sentence for a Russian-speaking learner to read aloud. "
-    "Reply with ONLY the sentence — no quotes, no commentary, no JSON."
+    "You generate short English sentences for a Russian-speaking learner to read aloud. "
+    "Reply with ONLY a JSON array of strings — no other text."
 )
 
+POOL_REFILL_AT = 3       # refill when fewer than this remain
+POOL_TARGET = 8          # how many to ask Claude for at a time
+_POOL_FALLBACK = "I would like a cup of coffee, please."
 
-async def generate_phrase(level: str, focus: str | None = None) -> str:
+_pool: dict[tuple[str, str | None], list[str]] = {}
+_pool_lock = asyncio.Lock()
+_refilling: set[tuple[str, str | None]] = set()
+
+
+async def _generate_batch(level: str, focus: str | None, count: int) -> list[str]:
     user = (
-        f"Generate ONE English sentence for a learner at CEFR level {level}. "
-        + (f"Target the sound or pattern: {focus}. " if focus else "")
-        + "Length 6-12 words. Natural, useful in real speech."
+        f"Generate {count} different English sentences for a learner at CEFR level {level}. "
+        + (f"Target the sound/pattern: {focus}. " if focus else "")
+        + "Each sentence 6-12 words, natural, useful in real speech. "
+        "Reply ONLY with a JSON array like: [\"sentence one\", \"sentence two\"]"
     )
     try:
         reply = await claude_complete(system_prompt=PHRASE_SYSTEM, user_message=user)
-        # Strip quotes/code-fences if any.
-        return reply.strip().strip("`").strip("\"'").strip()
+        # Try to extract the JSON array.
+        text = reply.strip().strip("`").strip()
+        start, end = text.find("["), text.rfind("]")
+        if start == -1 or end == -1:
+            return []
+        import json
+
+        data = json.loads(text[start : end + 1])
+        if not isinstance(data, list):
+            return []
+        return [str(s).strip().strip("\"'").strip() for s in data if str(s).strip()]
     except Exception:
-        return "I would like a cup of coffee, please."
+        return []
+
+
+async def _refill(key: tuple[str, str | None]) -> None:
+    level, focus = key
+    if key in _refilling:
+        return
+    _refilling.add(key)
+    try:
+        batch = await _generate_batch(level, focus, POOL_TARGET)
+        async with _pool_lock:
+            _pool.setdefault(key, []).extend(batch)
+    finally:
+        _refilling.discard(key)
+
+
+async def generate_phrase(level: str, focus: str | None = None) -> str:
+    """Return a ready phrase from the pool, refilling in the background."""
+    key = (level, focus)
+
+    async with _pool_lock:
+        bucket = _pool.setdefault(key, [])
+        phrase = bucket.pop(0) if bucket else None
+        need_refill = len(bucket) < POOL_REFILL_AT
+
+    if need_refill:
+        # Fire-and-forget background refill so this request stays fast.
+        asyncio.create_task(_refill(key))
+
+    if phrase is not None:
+        return phrase
+
+    # Cold start: pool was empty, fall back to a one-shot generation so the
+    # very first call still returns a real phrase (slow path, ~10 s).
+    batch = await _generate_batch(level, focus, POOL_TARGET)
+    if batch:
+        async with _pool_lock:
+            _pool.setdefault(key, []).extend(batch[1:])
+        return batch[0]
+    return _POOL_FALLBACK

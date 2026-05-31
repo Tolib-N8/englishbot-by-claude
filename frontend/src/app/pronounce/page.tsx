@@ -151,7 +151,19 @@ export default function PronouncePage() {
           <CardTitle className="text-sm">Прочитай вслух</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xl font-medium leading-relaxed">{phrase || "..."}</p>
+          {phrase ? (
+            <p className="text-xl font-medium leading-relaxed">{phrase}</p>
+          ) : loadingPhrase ? (
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              <div>
+                <div className="text-sm">Claude придумывает фразу…</div>
+                <div className="text-xs opacity-70">обычно 5–15 секунд</div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Не удалось получить фразу. Нажми «Новая фраза».</p>
+          )}
           <div className="mt-4 flex gap-2">
             {!recording ? (
               <Button onClick={startRecording} disabled={processing || !phrase}>
@@ -162,7 +174,7 @@ export default function PronouncePage() {
                 ⏹ Стоп
               </Button>
             )}
-            {processing && <span className="text-sm text-muted-foreground self-center">Анализирую...</span>}
+            {processing && <span className="text-sm text-muted-foreground self-center">Анализирую…</span>}
           </div>
           {error && <p className="text-sm text-destructive mt-2">{error}</p>}
         </CardContent>
