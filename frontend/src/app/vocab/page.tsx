@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Vocabulary } from "@/lib/api";
@@ -16,6 +17,7 @@ export default function VocabPage() {
     queryFn: async () =>
       (await api.get<Vocabulary[]>("/api/v1/vocab", { params: q ? { q } : {} })).data,
   });
+  const total = list.data?.length ?? 0;
 
   const addToDeck = useMutation({
     mutationFn: async (id: number) => (await api.post(`/api/v1/vocab/${id}/add-to-deck`)).data,
@@ -27,7 +29,14 @@ export default function VocabPage() {
 
   return (
     <div className="max-w-3xl space-y-4">
-      <h1 className="text-2xl font-bold">Vocabulary</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Vocabulary</h1>
+        <Link href="/vocab/practice">
+          <Button disabled={total === 0}>
+            🔁 Повторить ({total})
+          </Button>
+        </Link>
+      </div>
 
       <Input
         value={q}

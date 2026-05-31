@@ -34,26 +34,70 @@ export default function PronouncePage() {
     newPhrase();
   }, []);
 
+  // Pick the first MIME type the browser actually supports.
+  // Safari/iOS doesn't do webm at all; it speaks mp4. Chrome/Firefox prefer webm.
+  function pickRecorderMime(): { mime: string; ext: string } | null {
+    const candidates: { mime: string; ext: string }[] = [
+      { mime: "audio/webm;codecs=opus", ext: "webm" },
+      { mime: "audio/webm", ext: "webm" },
+      { mime: "audio/mp4;codecs=mp4a.40.2", ext: "m4a" },
+      { mime: "audio/mp4", ext: "m4a" },
+      { mime: "audio/aac", ext: "aac" },
+      { mime: "audio/ogg;codecs=opus", ext: "ogg" },
+    ];
+    for (const c of candidates) {
+      try {
+        if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c.mime)) {
+          return c;
+        }
+      } catch {
+        // some browsers throw rather than returning false
+      }
+    }
+    return null;
+  }
+
   async function startRecording() {
     setError(null);
     setResult(null);
+
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setError("Браузер не поддерживает запись с микрофона");
+      return;
+    }
+    const picked = pickRecorderMime();
+    if (!picked) {
+      setError("Этот браузер не умеет записывать аудио. Попробуй Chrome/Safari/Firefox.");
+      return;
+    }
+
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`Нет доступа к микрофону: ${msg}`);
+      return;
+    }
+
+    try {
+      const rec = new MediaRecorder(stream, { mimeType: picked.mime });
       chunksRef.current = [];
       rec.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        await upload(blob);
+        const blob = new Blob(chunksRef.current, { type: picked.mime });
+        await upload(blob, picked.ext);
       };
       recorderRef.current = rec;
       rec.start();
       setRecording(true);
-    } catch (_e) {
-      setError("Нет доступа к микрофону");
+    } catch (e) {
+      stream.getTracks().forEach((t) => t.stop());
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`Не удалось запустить запись: ${msg}`);
     }
   }
 
@@ -62,24 +106,30 @@ export default function PronouncePage() {
     setRecording(false);
   }
 
-  async function upload(blob: Blob) {
+  async function upload(blob: Blob, ext: string) {
+    if (blob.size === 0) {
+      setError("Запись пустая — попробуй ещё раз");
+      return;
+    }
     setProcessing(true);
     try {
       const form = new FormData();
-      form.append("audio", blob, "rec.webm");
+      form.append("audio", blob, `rec.${ext}`);
       form.append("target_text", phrase);
       const res = await fetch(`${API_BASE}/api/v1/pronounce/transcribe`, {
         method: "POST",
         body: form,
       });
       if (!res.ok) {
-        setError(`Ошибка: HTTP ${res.status}`);
+        const body = await res.text().catch(() => "");
+        setError(`Ошибка: HTTP ${res.status}${body ? " — " + body.slice(0, 200) : ""}`);
         return;
       }
       const data: PronunciationResult = await res.json();
       setResult(data);
-    } catch (_e) {
-      setError("Не удалось отправить запись");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`Не удалось отправить запись: ${msg}`);
     } finally {
       setProcessing(false);
     }
