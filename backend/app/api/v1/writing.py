@@ -14,6 +14,8 @@ from app.models.writing_lesson import WritingLesson
 from app.schemas.writing import (
     LessonDetail,
     LessonSummary,
+    TemplateDetail,
+    TemplateSummary,
     WritingListItem,
     WritingPromptOut,
     WritingPromptRequest,
@@ -30,6 +32,11 @@ from app.services.writing_lessons import (
     CURRICULUM,
     generate_lesson_body,
     get_lesson_spec,
+)
+from app.services.writing_templates import (
+    TEMPLATES,
+    generate_template_body,
+    get_template_spec,
 )
 
 router = APIRouter()
@@ -194,6 +201,58 @@ async def mark_lesson_read(slug: str, db: AsyncSession = Depends(get_db)):
         generated_at=row.generated_at,
         prev_slug=CURRICULUM[order - 1].slug if order > 0 else None,
         next_slug=CURRICULUM[order + 1].slug if order + 1 < len(CURRICULUM) else None,
+    )
+
+
+# --- Templates (Task 2 essay skeletons) -------------------------------------
+
+
+@router.get("/templates", response_model=list[TemplateSummary])
+async def list_templates(db: AsyncSession = Depends(get_db)):
+    rows = (
+        await db.execute(
+            select(WritingLesson).where(WritingLesson.slug.like("tmpl-%"))
+        )
+    ).scalars().all()
+    by_slug = {r.slug: r for r in rows}
+    return [
+        TemplateSummary(
+            slug=t.slug,
+            title=t.title,
+            summary=t.summary,
+            order=i + 1,
+            generated=t.slug in by_slug,
+        )
+        for i, t in enumerate(TEMPLATES)
+    ]
+
+
+@router.get("/templates/{slug}", response_model=TemplateDetail)
+async def get_template(slug: str, db: AsyncSession = Depends(get_db)):
+    spec = get_template_spec(slug)
+    if spec is None:
+        raise HTTPException(404, "unknown template")
+
+    row = (
+        await db.execute(select(WritingLesson).where(WritingLesson.slug == slug))
+    ).scalar_one_or_none()
+    if row is None:
+        body = await generate_template_body(spec)
+        row = WritingLesson(slug=slug, body_md=body)
+        db.add(row)
+        await db.commit()
+        await db.refresh(row)
+
+    order = next(i for i, t in enumerate(TEMPLATES) if t.slug == slug)
+    return TemplateDetail(
+        slug=spec.slug,
+        title=spec.title,
+        summary=spec.summary,
+        order=order + 1,
+        body_md=row.body_md,
+        generated_at=row.generated_at,
+        prev_slug=TEMPLATES[order - 1].slug if order > 0 else None,
+        next_slug=TEMPLATES[order + 1].slug if order + 1 < len(TEMPLATES) else None,
     )
 
 

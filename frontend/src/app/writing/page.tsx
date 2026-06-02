@@ -143,6 +143,9 @@ export default function WritingPage() {
           <Link href="/writing/lessons">
             <Button variant="outline" size="sm">📖 Гайды</Button>
           </Link>
+          <Link href="/writing/templates">
+            <Button variant="outline" size="sm">📋 Шаблоны</Button>
+          </Link>
           <Link href="/">
             <Button variant="ghost" size="sm">← На главную</Button>
           </Link>

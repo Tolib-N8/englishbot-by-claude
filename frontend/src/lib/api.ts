@@ -262,3 +262,22 @@ export type LessonDetail = {
   prev_slug: string | null;
   next_slug: string | null;
 };
+
+export type TemplateSummary = {
+  slug: string;
+  title: string;
+  summary: string;
+  order: number;
+  generated: boolean;
+};
+
+export type TemplateDetail = {
+  slug: string;
+  title: string;
+  summary: string;
+  order: number;
+  body_md: string;
+  generated_at: string;
+  prev_slug: string | null;
+  next_slug: string | null;
+};

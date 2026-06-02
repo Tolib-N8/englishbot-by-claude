@@ -83,3 +83,22 @@ class LessonDetail(BaseModel):
     generated_at: datetime
     next_slug: str | None
     prev_slug: str | None
+
+
+class TemplateSummary(BaseModel):
+    slug: str
+    title: str
+    summary: str
+    order: int
+    generated: bool
+
+
+class TemplateDetail(BaseModel):
+    slug: str
+    title: str
+    summary: str
+    order: int
+    body_md: str
+    generated_at: datetime
+    next_slug: str | None
+    prev_slug: str | None
