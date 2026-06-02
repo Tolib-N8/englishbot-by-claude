@@ -241,3 +241,24 @@ export type WritingListItem = {
   overall_band: string | null;
   created_at: string;
 };
+
+export type LessonSummary = {
+  slug: string;
+  title: string;
+  summary: string;
+  order: number;
+  read: boolean;
+  generated: boolean;
+};
+
+export type LessonDetail = {
+  slug: string;
+  title: string;
+  summary: string;
+  order: number;
+  body_md: string;
+  read: boolean;
+  generated_at: string;
+  prev_slug: string | null;
+  next_slug: string | null;
+};

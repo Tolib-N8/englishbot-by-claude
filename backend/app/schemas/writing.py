@@ -62,3 +62,24 @@ class WritingListItem(BaseModel):
     word_count: int
     overall_band: str | None
     created_at: datetime
+
+
+class LessonSummary(BaseModel):
+    slug: str
+    title: str
+    summary: str
+    order: int
+    read: bool
+    generated: bool
+
+
+class LessonDetail(BaseModel):
+    slug: str
+    title: str
+    summary: str
+    order: int
+    body_md: str
+    read: bool
+    generated_at: datetime
+    next_slug: str | None
+    prev_slug: str | None

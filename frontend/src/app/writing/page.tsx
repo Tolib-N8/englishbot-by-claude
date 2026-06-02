@@ -139,9 +139,14 @@ export default function WritingPage() {
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Writing — IELTS</h1>
-        <Link href="/">
-          <Button variant="ghost" size="sm">← На главную</Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/writing/lessons">
+            <Button variant="outline" size="sm">📖 Гайды</Button>
+          </Link>
+          <Link href="/">
+            <Button variant="ghost" size="sm">← На главную</Button>
+          </Link>
+        </div>
       </div>
 
       {/* Task picker + new prompt */}

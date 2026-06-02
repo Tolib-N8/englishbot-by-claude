@@ -7,8 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.deps import get_or_create_singleton_user
+from datetime import datetime, timezone
+
 from app.models.writing import WritingSubmission
+from app.models.writing_lesson import WritingLesson
 from app.schemas.writing import (
+    LessonDetail,
+    LessonSummary,
     WritingListItem,
     WritingPromptOut,
     WritingPromptRequest,
@@ -20,6 +25,11 @@ from app.services.writing import (
     count_words,
     generate_writing_prompt,
     grade_essay,
+)
+from app.services.writing_lessons import (
+    CURRICULUM,
+    generate_lesson_body,
+    get_lesson_spec,
 )
 
 router = APIRouter()
@@ -107,6 +117,87 @@ async def list_submissions(
         )
         for r in rows
     ]
+
+
+# --- Lessons (curriculum) — declared BEFORE /{submission_id} so the literal
+#     `/lessons` prefix wins over the int-typed catch-all.
+
+
+@router.get("/lessons", response_model=list[LessonSummary])
+async def list_lessons(db: AsyncSession = Depends(get_db)):
+    rows = (await db.execute(select(WritingLesson))).scalars().all()
+    by_slug = {r.slug: r for r in rows}
+    return [
+        LessonSummary(
+            slug=spec.slug,
+            title=spec.title,
+            summary=spec.summary,
+            order=i + 1,
+            read=(by_slug.get(spec.slug) is not None and by_slug[spec.slug].read_at is not None),
+            generated=spec.slug in by_slug,
+        )
+        for i, spec in enumerate(CURRICULUM)
+    ]
+
+
+@router.get("/lessons/{slug}", response_model=LessonDetail)
+async def get_lesson(slug: str, db: AsyncSession = Depends(get_db)):
+    spec = get_lesson_spec(slug)
+    if spec is None:
+        raise HTTPException(404, "unknown lesson")
+
+    row = (
+        await db.execute(select(WritingLesson).where(WritingLesson.slug == slug))
+    ).scalar_one_or_none()
+    if row is None:
+        body = await generate_lesson_body(spec)
+        row = WritingLesson(slug=slug, body_md=body)
+        db.add(row)
+        await db.commit()
+        await db.refresh(row)
+
+    order = next(i for i, s in enumerate(CURRICULUM) if s.slug == slug)
+    return LessonDetail(
+        slug=spec.slug,
+        title=spec.title,
+        summary=spec.summary,
+        order=order + 1,
+        body_md=row.body_md,
+        read=row.read_at is not None,
+        generated_at=row.generated_at,
+        prev_slug=CURRICULUM[order - 1].slug if order > 0 else None,
+        next_slug=CURRICULUM[order + 1].slug if order + 1 < len(CURRICULUM) else None,
+    )
+
+
+@router.post("/lessons/{slug}/read", response_model=LessonDetail)
+async def mark_lesson_read(slug: str, db: AsyncSession = Depends(get_db)):
+    spec = get_lesson_spec(slug)
+    if spec is None:
+        raise HTTPException(404, "unknown lesson")
+    row = (
+        await db.execute(select(WritingLesson).where(WritingLesson.slug == slug))
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(404, "lesson not generated yet")
+    row.read_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(row)
+    order = next(i for i, s in enumerate(CURRICULUM) if s.slug == slug)
+    return LessonDetail(
+        slug=spec.slug,
+        title=spec.title,
+        summary=spec.summary,
+        order=order + 1,
+        body_md=row.body_md,
+        read=row.read_at is not None,
+        generated_at=row.generated_at,
+        prev_slug=CURRICULUM[order - 1].slug if order > 0 else None,
+        next_slug=CURRICULUM[order + 1].slug if order + 1 < len(CURRICULUM) else None,
+    )
+
+
+# --- Past submission detail (kept last because the path matches anything) ----
 
 
 @router.get("/{submission_id}", response_model=WritingResult)
