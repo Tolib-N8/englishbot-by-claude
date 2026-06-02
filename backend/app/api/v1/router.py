@@ -1,6 +1,16 @@
 from fastapi import APIRouter
 
-from app.api.v1 import chat, conversations, exercises, flashcards, meta, notes, pronounce, vocab
+from app.api.v1 import (
+    chat,
+    conversations,
+    exercises,
+    flashcards,
+    meta,
+    notes,
+    pronounce,
+    vocab,
+    writing,
+)
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(meta.router, tags=["meta"])
@@ -11,3 +21,4 @@ api_router.include_router(flashcards.router, prefix="/flashcards", tags=["flashc
 api_router.include_router(notes.router, prefix="/notes", tags=["notes"])
 api_router.include_router(exercises.router, prefix="/exercises", tags=["exercises"])
 api_router.include_router(pronounce.router, prefix="/pronounce", tags=["pronounce"])
+api_router.include_router(writing.router, prefix="/writing", tags=["writing"])

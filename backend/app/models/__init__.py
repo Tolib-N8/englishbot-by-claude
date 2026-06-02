@@ -6,6 +6,7 @@ from app.models.message import Message
 from app.models.pronunciation import PronunciationAttempt
 from app.models.user import User
 from app.models.vocabulary import Vocabulary
+from app.models.writing import WritingSubmission
 
 __all__ = [
     "User",
@@ -17,4 +18,5 @@ __all__ = [
     "GrammarExercise",
     "ExerciseAttempt",
     "PronunciationAttempt",
+    "WritingSubmission",
 ]

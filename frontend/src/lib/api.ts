@@ -197,3 +197,47 @@ export type SummarizeResponse = {
   confirmation: string;
   new_note_paths: string[];
 };
+
+export type WritingTaskType = "task1_academic" | "task2";
+
+export type WritingPrompt = {
+  task_type: WritingTaskType;
+  prompt_en: string;
+  prompt_ru: string | null;
+  min_words: number;
+};
+
+export type WritingCriterion = {
+  name: string;
+  band: string | null;
+  comment_ru: string | null;
+};
+
+export type WritingCorrection = {
+  original: string;
+  fixed: string;
+  explanation_ru: string | null;
+};
+
+export type WritingResult = {
+  id: number;
+  task_type: string;
+  prompt_en: string;
+  prompt_ru: string | null;
+  min_words: number;
+  user_text: string;
+  word_count: number;
+  overall_band: string | null;
+  criteria: WritingCriterion[];
+  corrections: WritingCorrection[];
+  tip_ru: string | null;
+  created_at: string;
+};
+
+export type WritingListItem = {
+  id: number;
+  task_type: string;
+  word_count: number;
+  overall_band: string | null;
+  created_at: string;
+};
