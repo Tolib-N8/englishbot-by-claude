@@ -8,6 +8,7 @@ import 'screens/level_screen.dart';
 import 'screens/chat_list_screen.dart';
 import 'screens/exercises_screen.dart';
 import 'screens/pronounce_screen.dart';
+import 'screens/writing_screen.dart';
 import 'screens/cards_screen.dart';
 import 'screens/settings_screen.dart';
 
@@ -49,7 +50,7 @@ class RootShell extends StatefulWidget {
 class _RootShellState extends State<RootShell> {
   int _index = 0;
 
-  static const _titles = ['English Tutor', 'Уровень', 'Chat', 'Grammar', 'Speak', 'Cards'];
+  static const _titles = ['English Tutor', 'Уровень', 'Chat', 'Grammar', 'Writing', 'Speak', 'Cards'];
 
   void _go(int i) => setState(() => _index = i);
 
@@ -62,8 +63,10 @@ class _RootShellState extends State<RootShell> {
       case 3:
         return const ExercisesScreen();
       case 4:
-        return const PronounceScreen();
+        return const WritingScreen();
       case 5:
+        return const PronounceScreen();
+      case 6:
         return const CardsScreen();
       default:
         return HomeScreen(onNavigate: _go);
@@ -97,6 +100,7 @@ class _RootShellState extends State<RootShell> {
           NavigationDestination(icon: Icon(Icons.speed_outlined), selectedIcon: Icon(Icons.speed), label: 'Level'),
           NavigationDestination(icon: Icon(Icons.chat_outlined), selectedIcon: Icon(Icons.chat), label: 'Chat'),
           NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Grammar'),
+          NavigationDestination(icon: Icon(Icons.edit_note_outlined), selectedIcon: Icon(Icons.edit_note), label: 'Writing'),
           NavigationDestination(icon: Icon(Icons.mic_outlined), selectedIcon: Icon(Icons.mic), label: 'Speak'),
           NavigationDestination(icon: Icon(Icons.style_outlined), selectedIcon: Icon(Icons.style), label: 'Cards'),
         ],

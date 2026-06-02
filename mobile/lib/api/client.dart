@@ -170,4 +170,53 @@ class ApiClient {
     }
     return PronunciationResult.fromJson(jsonDecode(utf8.decode(res.bodyBytes)));
   }
+
+  // --- Writing ---
+  Future<WritingPromptModel> writingPrompt(String taskType) async =>
+      WritingPromptModel.fromJson(
+          await _post('/api/v1/writing/prompt', {'task_type': taskType}));
+
+  Future<WritingResult> writingSubmit({
+    required String taskType,
+    required String promptEn,
+    String? promptRu,
+    required int minWords,
+    required String userText,
+  }) async =>
+      WritingResult.fromJson(await _post('/api/v1/writing/submit', {
+        'task_type': taskType,
+        'prompt_en': promptEn,
+        'prompt_ru': promptRu,
+        'min_words': minWords,
+        'user_text': userText,
+      }));
+
+  Future<List<WritingHistoryItem>> writingHistory() async {
+    final data = await _get('/api/v1/writing') as List;
+    return data.map((e) => WritingHistoryItem.fromJson(e)).toList();
+  }
+
+  Future<WritingResult> writingGet(int id) async =>
+      WritingResult.fromJson(await _get('/api/v1/writing/$id'));
+
+  // --- Lessons ---
+  Future<List<LessonSummary>> lessons() async {
+    final data = await _get('/api/v1/writing/lessons') as List;
+    return data.map((e) => LessonSummary.fromJson(e)).toList();
+  }
+
+  Future<LessonDetail> lesson(String slug) async =>
+      LessonDetail.fromJson(await _get('/api/v1/writing/lessons/$slug'));
+
+  Future<LessonDetail> lessonMarkRead(String slug) async =>
+      LessonDetail.fromJson(await _post('/api/v1/writing/lessons/$slug/read'));
+
+  // --- Templates ---
+  Future<List<TemplateSummary>> templates() async {
+    final data = await _get('/api/v1/writing/templates') as List;
+    return data.map((e) => TemplateSummary.fromJson(e)).toList();
+  }
+
+  Future<TemplateDetail> template(String slug) async =>
+      TemplateDetail.fromJson(await _get('/api/v1/writing/templates/$slug'));
 }

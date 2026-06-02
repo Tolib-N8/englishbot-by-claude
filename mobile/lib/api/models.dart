@@ -282,3 +282,221 @@ class PronunciationResult {
         tipRu: j['tip_ru'],
       );
 }
+
+// ---------- IELTS Writing ----------
+
+class WritingPromptModel {
+  final String taskType;
+  final String promptEn;
+  final String? promptRu;
+  final int minWords;
+  WritingPromptModel({
+    required this.taskType,
+    required this.promptEn,
+    this.promptRu,
+    required this.minWords,
+  });
+  factory WritingPromptModel.fromJson(Map<String, dynamic> j) => WritingPromptModel(
+        taskType: j['task_type'] ?? 'task2',
+        promptEn: j['prompt_en'] ?? '',
+        promptRu: j['prompt_ru'],
+        minWords: j['min_words'] ?? 250,
+      );
+}
+
+class WritingCriterion {
+  final String name;
+  final String? band;
+  final String? commentRu;
+  WritingCriterion({required this.name, this.band, this.commentRu});
+  factory WritingCriterion.fromJson(Map<String, dynamic> j) => WritingCriterion(
+        name: j['name'] ?? '',
+        band: j['band'],
+        commentRu: j['comment_ru'],
+      );
+}
+
+class WritingCorrection {
+  final String original;
+  final String fixed;
+  final String? explanationRu;
+  WritingCorrection({required this.original, required this.fixed, this.explanationRu});
+  factory WritingCorrection.fromJson(Map<String, dynamic> j) => WritingCorrection(
+        original: j['original'] ?? '',
+        fixed: j['fixed'] ?? '',
+        explanationRu: j['explanation_ru'],
+      );
+}
+
+class WritingResult {
+  final int id;
+  final String taskType;
+  final String promptEn;
+  final String? promptRu;
+  final int minWords;
+  final String userText;
+  final int wordCount;
+  final String? overallBand;
+  final List<WritingCriterion> criteria;
+  final List<WritingCorrection> corrections;
+  final String? tipRu;
+  final String createdAt;
+  WritingResult({
+    required this.id,
+    required this.taskType,
+    required this.promptEn,
+    this.promptRu,
+    required this.minWords,
+    required this.userText,
+    required this.wordCount,
+    this.overallBand,
+    required this.criteria,
+    required this.corrections,
+    this.tipRu,
+    required this.createdAt,
+  });
+  factory WritingResult.fromJson(Map<String, dynamic> j) => WritingResult(
+        id: j['id'],
+        taskType: j['task_type'] ?? '',
+        promptEn: j['prompt_en'] ?? '',
+        promptRu: j['prompt_ru'],
+        minWords: j['min_words'] ?? 0,
+        userText: j['user_text'] ?? '',
+        wordCount: j['word_count'] ?? 0,
+        overallBand: j['overall_band'],
+        criteria: (j['criteria'] as List?)?.map((e) => WritingCriterion.fromJson(e)).toList() ?? const [],
+        corrections: (j['corrections'] as List?)?.map((e) => WritingCorrection.fromJson(e)).toList() ?? const [],
+        tipRu: j['tip_ru'],
+        createdAt: j['created_at'] ?? '',
+      );
+}
+
+class WritingHistoryItem {
+  final int id;
+  final String taskType;
+  final int wordCount;
+  final String? overallBand;
+  final String createdAt;
+  WritingHistoryItem({
+    required this.id,
+    required this.taskType,
+    required this.wordCount,
+    this.overallBand,
+    required this.createdAt,
+  });
+  factory WritingHistoryItem.fromJson(Map<String, dynamic> j) => WritingHistoryItem(
+        id: j['id'],
+        taskType: j['task_type'] ?? '',
+        wordCount: j['word_count'] ?? 0,
+        overallBand: j['overall_band'],
+        createdAt: j['created_at'] ?? '',
+      );
+}
+
+// ---------- Lessons & Templates ----------
+
+class LessonSummary {
+  final String slug;
+  final String title;
+  final String summary;
+  final int order;
+  final bool read;
+  final bool generated;
+  LessonSummary({
+    required this.slug,
+    required this.title,
+    required this.summary,
+    required this.order,
+    required this.read,
+    required this.generated,
+  });
+  factory LessonSummary.fromJson(Map<String, dynamic> j) => LessonSummary(
+        slug: j['slug'] ?? '',
+        title: j['title'] ?? '',
+        summary: j['summary'] ?? '',
+        order: j['order'] ?? 0,
+        read: j['read'] ?? false,
+        generated: j['generated'] ?? false,
+      );
+}
+
+class LessonDetail {
+  final String slug;
+  final String title;
+  final String summary;
+  final int order;
+  final String bodyMd;
+  final bool read;
+  final String? prevSlug;
+  final String? nextSlug;
+  LessonDetail({
+    required this.slug,
+    required this.title,
+    required this.summary,
+    required this.order,
+    required this.bodyMd,
+    required this.read,
+    this.prevSlug,
+    this.nextSlug,
+  });
+  factory LessonDetail.fromJson(Map<String, dynamic> j) => LessonDetail(
+        slug: j['slug'] ?? '',
+        title: j['title'] ?? '',
+        summary: j['summary'] ?? '',
+        order: j['order'] ?? 0,
+        bodyMd: j['body_md'] ?? '',
+        read: j['read'] ?? false,
+        prevSlug: j['prev_slug'],
+        nextSlug: j['next_slug'],
+      );
+}
+
+class TemplateSummary {
+  final String slug;
+  final String title;
+  final String summary;
+  final int order;
+  final bool generated;
+  TemplateSummary({
+    required this.slug,
+    required this.title,
+    required this.summary,
+    required this.order,
+    required this.generated,
+  });
+  factory TemplateSummary.fromJson(Map<String, dynamic> j) => TemplateSummary(
+        slug: j['slug'] ?? '',
+        title: j['title'] ?? '',
+        summary: j['summary'] ?? '',
+        order: j['order'] ?? 0,
+        generated: j['generated'] ?? false,
+      );
+}
+
+class TemplateDetail {
+  final String slug;
+  final String title;
+  final String summary;
+  final int order;
+  final String bodyMd;
+  final String? prevSlug;
+  final String? nextSlug;
+  TemplateDetail({
+    required this.slug,
+    required this.title,
+    required this.summary,
+    required this.order,
+    required this.bodyMd,
+    this.prevSlug,
+    this.nextSlug,
+  });
+  factory TemplateDetail.fromJson(Map<String, dynamic> j) => TemplateDetail(
+        slug: j['slug'] ?? '',
+        title: j['title'] ?? '',
+        summary: j['summary'] ?? '',
+        order: j['order'] ?? 0,
+        bodyMd: j['body_md'] ?? '',
+        prevSlug: j['prev_slug'],
+        nextSlug: j['next_slug'],
+      );
+}
