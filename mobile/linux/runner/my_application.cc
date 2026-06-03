@@ -32,24 +32,28 @@ static void my_application_activate(GApplication* application) {
   // in case the window manager does more exotic layout, e.g. tiling.
   // If running on Wayland assume the header bar will work (may need changing
   // if future cases occur).
-  gboolean use_header_bar = TRUE;
+  // Use the OS/WM-native title bar everywhere by default. The GTK
+  // HeaderBar (the chunky bar Flutter ships with) duplicates with KDE/
+  // other non-GNOME desktops and looks broken — keep it only when we're
+  // actually on GNOME Shell, otherwise let the WM draw the title bar.
+  gboolean use_header_bar = FALSE;
 #ifdef GDK_WINDOWING_X11
   GdkScreen* screen = gtk_window_get_screen(window);
   if (GDK_IS_X11_SCREEN(screen)) {
     const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
-    if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
-      use_header_bar = FALSE;
+    if (g_strcmp0(wm_name, "GNOME Shell") == 0) {
+      use_header_bar = TRUE;
     }
   }
 #endif
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "englishbot");
+    gtk_header_bar_set_title(header_bar, "English Tutor");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "englishbot");
+    gtk_window_set_title(window, "English Tutor");
   }
 
   gtk_window_set_default_size(window, 1280, 720);
